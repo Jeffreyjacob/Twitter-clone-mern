@@ -1,3 +1,4 @@
+import { RiEqualizer3Fill } from "react-icons/ri"
 import Notification from "../models/notificationModel.js"
 import Post from "../models/postModel.js"
 import User from "../models/userModel.js"
@@ -151,7 +152,42 @@ export const GetLikedPostHandler = async(req,res,next)=>{
 
 export const GetFollowingPost = async (req,res,next)=>{
     try{
+     const userId = req.user._id
+     const user = await User.findById(userId);
+     if(!user){
+        throw new AppError("User not found",404)
+     }
+     const following = user.following
+     const feedPost = await Post.find({user:{$in:following}}).sort({createdAt:-1}).populate({
+        path:"user",
+        select:"-password"
+     })
+     .populate({
+        path:"comments.user",
+        select:"-password"
+     })
+     res.status(200).json(feedPost)
+    }catch(error){
+        console.log(error)
+        next(error)
+    }
+}
 
+export const GetUserPostHandler = async (req,res,next)=>{
+    try{
+     const {username} = req.params
+     const user = await User.findOne({username})
+     if(!user){
+        throw new AppError("User not found")
+     }
+     const posts = await Post.find({user:user._id}).sort({createdAt: -1}).populate({
+        path:"user",
+        select:"-password"
+     }).populate({
+        path:"comments.user",
+        select:"-password"
+     })
+     res.status(200).json(posts)
     }catch(error){
         console.log(error)
         next(error)
