@@ -24,7 +24,14 @@ const userSchema = new mongoose.Schema({
     profileImg:{type:String,default:""},
     coverImage:{type:String,default:""},
     bio:{type:String,default:""},
-    link:{type:String,default:""}
+    link:{type:String,default:""},
+    likedPosts:[
+        {
+            type:mongoose.Schema.Types.ObjectId,
+            ref:"Post",
+            default:[]
+        }
+    ]
 
 },{timestamps:true})
 

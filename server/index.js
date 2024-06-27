@@ -7,6 +7,7 @@ import connectToDB from './db/connect.js';
 import errorMiddleware from './middleware/errorHandler.js';
 import userRoutes from "./routes/user.js"
 import { v2 as cloudinary} from 'cloudinary';
+import postRoutes from './routes/post.js';
 
 dotenv.config();
 
@@ -28,6 +29,7 @@ app.use(cookieParser())
 // routes
 app.use("/api/v2/auth",authRoutes)
 app.use("/api/v2/user",userRoutes)
+app.use("/api/v2/post",postRoutes)
 
 app.use(errorMiddleware)
 
