@@ -8,6 +8,8 @@ import errorMiddleware from './middleware/errorHandler.js';
 import userRoutes from "./routes/user.js"
 import { v2 as cloudinary} from 'cloudinary';
 import postRoutes from './routes/post.js';
+import notificationRoutes from './routes/notification.js';
+
 
 dotenv.config();
 
@@ -30,6 +32,7 @@ app.use(cookieParser())
 app.use("/api/v2/auth",authRoutes)
 app.use("/api/v2/user",userRoutes)
 app.use("/api/v2/post",postRoutes)
+app.use("/api/v2/notification",notificationRoutes)
 
 app.use(errorMiddleware)
 
