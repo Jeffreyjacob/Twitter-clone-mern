@@ -64,12 +64,3 @@ export const LogOutHandler = async(req,res,next)=>{
     }
 }
 
-export const GetUserHandler = async (req,res,next)=>{
-    try{
-       const user = await User.findById(req.user._id).select("-password")
-       res.status(200).json(user);
-    }catch(error){
-        console.log(error)
-        next(error)
-    }
-}
