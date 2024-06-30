@@ -4,6 +4,7 @@ import PostSkeleton from "../skeletons/PostSkeleton";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 
+
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const Posts = ({feedType}) => {
