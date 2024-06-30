@@ -1,23 +1,55 @@
+/* eslint-disable react/prop-types */
 import Post from "./Post";
 import PostSkeleton from "../skeletons/PostSkeleton";
-import { POSTS } from "../../utils/db/dummy";
+import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
 
-const Posts = () => {
-	const isLoading = false;
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
+const Posts = ({feedType}) => {
+
+	const getPostEndpoint = ()=>{
+		switch(feedType){
+		case "forYou":
+			return `${API_BASE_URL}/api/v2/post`;
+		case "following":
+			return `${API_BASE_URL}/api/v2/post/getFollowingPost`;
+		default:
+			return `${API_BASE_URL}/api/v2/post`
+		}
+	}
+
+	const POST_ENDPOINT = getPostEndpoint()
+
+	const {data:getPost,isLoading,refetch,isRefetching} = useQuery({
+		queryKey:["Posts"],
+		queryFn:async()=>{
+			const res = await fetch(POST_ENDPOINT,{
+				credentials:"include"
+			});
+			const data = await res.json();
+			if(!res.ok){
+				throw new Error(data.error || "something went wrong")
+			}
+			return data
+		}
+	})
+	useEffect(()=>{
+		refetch();
+	},[feedType,refetch])
 	return (
 		<>
-			{isLoading && (
+			{isLoading || isRefetching && (
 				<div className='flex flex-col justify-center'>
 					<PostSkeleton />
 					<PostSkeleton />
 					<PostSkeleton />
 				</div>
 			)}
-			{!isLoading && POSTS?.length === 0 && <p className='text-center my-4'>No posts in this tab. Switch 👻</p>}
-			{!isLoading && POSTS && (
+			{!isLoading && !isRefetching && getPost?.length === 0 && <p className='text-center my-4'>No posts in this tab. Switch 👻</p>}
+			{!isLoading && !isRefetching && getPost && (
 				<div>
-					{POSTS.map((post) => (
+					{getPost.map((post) => (
 						<Post key={post._id} post={post} />
 					))}
 				</div>

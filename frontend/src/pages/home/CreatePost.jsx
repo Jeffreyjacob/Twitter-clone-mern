@@ -2,42 +2,76 @@ import { CiImageOn } from "react-icons/ci";
 import { BsEmojiSmileFill } from "react-icons/bs";
 import { useRef, useState } from "react";
 import { IoCloseSharp } from "react-icons/io5";
-import ProfileImage from '../../assets/avatars/boy1.png'
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const CreatePost = () => {
 	const [text, setText] = useState("");
 	const [img, setImg] = useState(null);
 
+
+	const {data:authUser} = useQuery({queryKey:["authUser"]})
+	const queryClient = useQueryClient();
+
+    const {mutate:CreatePost,isPending,isError} = useMutation({
+		mutationFn:async({text,img})=>{
+			try{
+				const formData = new FormData()
+				formData.append("text",text);
+				if(img){
+					formData.append("img",img);
+				}
+				console.log(img,text)
+				const res = await fetch(`${API_BASE_URL}/api/v2/post/create`,{
+					method:"POST",
+					credentials:"include",
+					body:formData
+				})
+				const data = await res.json()
+				if(!res.ok){
+					throw new Error(data.message || "Something went wrong")
+				}
+               return data
+			}catch(error){
+				throw new Error(error)
+			}
+		},
+		onSuccess:()=>{
+			setText("")
+			setImg(null)
+			toast.success("Post Created Successfully!")
+			queryClient.invalidateQueries({queryKey:["Posts"]})
+		}
+	})
+
 	const imgRef = useRef(null);
 
-	const isPending = false;
-	const isError = false;
 
-	const data = {
-		profileImg: ProfileImage,
-	};
-
-	const handleSubmit = (e) => {
-		e.preventDefault();
-		alert("Post created successfully");
-	};
 
 	const handleImgChange = (e) => {
 		const file = e.target.files[0];
 		if (file) {
-			const reader = new FileReader();
-			reader.onload = () => {
-				setImg(reader.result);
-			};
-			reader.readAsDataURL(file);
+			setImg(file)
+			// const reader = new FileReader();
+			// reader.onload = () => {
+			// 	setImg(reader.result);
+			// };
+			// reader.readAsDataURL(file);
 		}
+	};
+	const handleSubmit = (e) => {
+		e.preventDefault();
+		console.log(img)
+		CreatePost({text,img})
 	};
 
 	return (
 		<div className='flex p-4 items-start gap-4 border-b border-gray-700'>
 			<div className='avatar'>
 				<div className='w-8 rounded-full'>
-					<img src={data.profileImg || "/avatar-placeholder.png"} />
+					<img src={authUser.profileImg || "/avatar-placeholder.png"} />
 				</div>
 			</div>
 			<form className='flex flex-col gap-2 w-full' onSubmit={handleSubmit}>
