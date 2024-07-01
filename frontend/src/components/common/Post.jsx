@@ -14,35 +14,67 @@ import imagePlaceholder from '../../assets/avatar-placeholder.png'
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const Post = ({ post }) => {
-	const {data:authUser} = useQuery({queryKey:["authUser"]})
+	const { data: authUser } = useQuery({ queryKey: ["authUser"] })
 	const [comment, setComment] = useState("");
 	const queryClient = useQueryClient();
-	const {mutate:deletePost,isPending} = useMutation({
-		mutationFn:async ()=>{
-			try{
-              const res= await fetch(`${API_BASE_URL}/api/v2/post/delete/${post._id}`,{
-				method:"DELETE",
-				credentials:"include"
-			})
-			const data = res.json();
-			if(!res.ok){
-				throw new Error(data.error || "something went wrong")
-			}
-			return data
-			}catch(error){
+	const { mutate: deletePost, isPending: isDeleting } = useMutation({
+		mutationFn: async () => {
+			try {
+				const res = await fetch(`${API_BASE_URL}/api/v2/post/delete/${post._id}`, {
+					method: "DELETE",
+					credentials: "include"
+				})
+				const data = res.json();
+				if (!res.ok) {
+					throw new Error(data.error || "something went wrong")
+				}
+				return data
+			} catch (error) {
 				throw new Error(error)
 			}
 		},
-		onSuccess:()=>{
+		onSuccess: () => {
 			toast.success("Post deleted successfully")
-			queryClient.invalidateQueries({queryKey:["Posts"]})
+			queryClient.invalidateQueries({ queryKey: ["Posts"] })
 		}
 	})
+
+	const { mutate: LikedPost, isPending: isLiking } = useMutation({
+		mutationFn: async () => {
+			try {
+				const res = await fetch(`${API_BASE_URL}/api/v2/post/like/${post._id}`, {
+					method: "POST",
+					credentials: "include"
+				})
+				const data = await res.json();
+				if (!res.ok) {
+					throw new Error(data.error || "something went wrong")
+				}
+				return data;
+			} catch (error) {
+				throw new Error(error)
+			}
+		},
+		onSuccess: (updatedLikes) => {
+			queryClient.setQueryData(["Posts"], (oldData) => {
+				return oldData.map(p => {
+					if (p._id === post._id) {
+						return { ...p, likes: updatedLikes }
+					}
+					return p;
+				})
+			})
+		},
+		onError: (error) => {
+			toast.error(error.message)
+		}
+	})
+
 	const postOwner = post.user;
-	const isLiked = false;
+	const isLiked = post.likes.includes(authUser._id)
 
 	const isMyPost = authUser._id === post.user._id;
-   
+
 	const formattedDate = "1h";
 
 	const isCommenting = false;
@@ -55,7 +87,10 @@ const Post = ({ post }) => {
 		e.preventDefault();
 	};
 
-	const handleLikePost = () => {};
+	const handleLikePost = () => {
+		if (isLiking) return
+		LikedPost()
+	};
 
 	return (
 		<>
@@ -77,10 +112,10 @@ const Post = ({ post }) => {
 						</span>
 						{isMyPost && (
 							<span className='flex justify-end flex-1'>
-								{!isPending && <FaTrash className='cursor-pointer hover:text-red-500' onClick={handleDeletePost} />}
+								{!isDeleting && <FaTrash className='cursor-pointer hover:text-red-500' onClick={handleDeletePost} />}
 								{
-									isPending && (
-										<LoadingSpinner/>
+									isDeleting && (
+										<LoadingSpinner />
 									)
 								}
 							</span>
@@ -122,7 +157,7 @@ const Post = ({ post }) => {
 												<div className='avatar'>
 													<div className='w-8 rounded-full'>
 														<img
-															src={comment.user.profileImg || "/avatar-placeholder.png"}
+															src={comment.user.profileImg || imagePlaceholder}
 														/>
 													</div>
 												</div>
@@ -150,7 +185,7 @@ const Post = ({ post }) => {
 										/>
 										<button className='btn btn-primary rounded-full btn-sm text-white px-4'>
 											{isCommenting ? (
-												<span className='loading loading-spinner loading-md'></span>
+												<LoadingSpinner size="m" />
 											) : (
 												"Post"
 											)}
@@ -166,15 +201,15 @@ const Post = ({ post }) => {
 								<span className='text-sm text-slate-500 group-hover:text-green-500'>0</span>
 							</div>
 							<div className='flex gap-1 items-center group cursor-pointer' onClick={handleLikePost}>
-								{!isLiked && (
+								{isLiking && <LoadingSpinner size="sm" />}
+								{!isLiked && !isLiking && (
 									<FaRegHeart className='w-4 h-4 cursor-pointer text-slate-500 group-hover:text-pink-500' />
 								)}
-								{isLiked && <FaRegHeart className='w-4 h-4 cursor-pointer text-pink-500 ' />}
+								{isLiked && !isLiking && <FaRegHeart className='w-4 h-4 cursor-pointer text-pink-500 ' />}
 
 								<span
-									className={`text-sm text-slate-500 group-hover:text-pink-500 ${
-										isLiked ? "text-pink-500" : ""
-									}`}
+									className={`text-sm text-slate-500 group-hover:text-pink-500 ${isLiked ? "text-pink-500" : ""
+										}`}
 								>
 									{post.likes.length}
 								</span>
