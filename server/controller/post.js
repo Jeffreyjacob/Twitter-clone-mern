@@ -70,7 +70,7 @@ export const CommentOnPostHandler = async(req,res,next)=>{
        const comment = {user:userId,text:request.text}
        post.comments.push(comment)
        await post.save();
-       res.status(201).json({message:"user commented"})
+       res.status(201).json(post.comments)
     }catch(error){
       console.log(error)
       next(error)
