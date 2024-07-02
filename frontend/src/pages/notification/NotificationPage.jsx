@@ -3,34 +3,59 @@ import LoadingSpinner from "../../components/common/LoadingSpinner";
 import { IoSettingsOutline } from "react-icons/io5";
 import { FaUser } from "react-icons/fa";
 import { FaHeart } from "react-icons/fa6";
-import avatarBoy2 from '../../assets/avatars/boy2.png'
-import avatarGirl1 from "../../assets/avatars/girl1.png"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
+import imagePlaceholder from '../../assets/avatar-placeholder.png'
+
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
 const NotificationPage = () => {
-	const isLoading = false;
-	const notifications = [
-		{
-			_id: "1",
-			from: {
-				_id: "1",
-				username: "johndoe",
-				profileImg:avatarBoy2,
-			},
-			type: "follow",
+	const queryClient = useQueryClient();
+	const { data: Notifications, isLoading } = useQuery({
+		queryKey: ["notifications"],
+		queryFn: async () => {
+			try {
+				const res = await fetch(`${API_BASE_URL}/api/v2/notification`, {
+					method: "GET",
+					credentials: "include"
+				})
+				const data = await res.json()
+				if (!res.ok) {
+					throw new Error(data.error || "Something went wrong")
+				}
+				console.log(data)
+				return data;
+			} catch (error) {
+				throw new Error(error)
+			}
+		}
+	})
+	const { mutate: deleteNotification} = useMutation({
+		mutationFn: async () => {
+			try {
+				const res = await fetch(`${API_BASE_URL}/api/v2/notification`, {
+					method: "DELETE",
+					credentials: "include"
+				})
+				const data = res.json()
+				if (!res.ok) {
+					throw new Error(data.error || "Something went wrong")
+				}
+				return data;
+			} catch (error) {
+				throw new Error(error)
+			}
 		},
-		{
-			_id: "2",
-			from: {
-				_id: "2",
-				username: "janedoe",
-				profileImg: avatarGirl1,
-			},
-			type: "like",
+		onSuccess: () => {
+			toast.success("Notification deleted successfully!")
+			queryClient.invalidateQueries({ queryKey: ["notifications"] })
 		},
-	];
-
+		onError: (error) => {
+			toast.error(error.message)
+		}
+	})
 	const deleteNotifications = () => {
-		alert("All notifications deleted");
+		deleteNotification()
 	};
 
 	return (
@@ -57,8 +82,8 @@ const NotificationPage = () => {
 						<LoadingSpinner size='lg' />
 					</div>
 				)}
-				{notifications?.length === 0 && <div className='text-center p-4 font-bold'>No notifications 🤔</div>}
-				{notifications?.map((notification) => (
+				{Notifications?.length === 0 && <div className='text-center p-4 font-bold'>No notifications 🤔</div>}
+				{Notifications?.map((notification) => (
 					<div className='border-b border-gray-700' key={notification._id}>
 						<div className='flex gap-2 p-4'>
 							{notification.type === "follow" && <FaUser className='w-7 h-7 text-primary' />}
@@ -66,7 +91,7 @@ const NotificationPage = () => {
 							<Link to={`/profile/${notification.from.username}`}>
 								<div className='avatar'>
 									<div className='w-8 rounded-full'>
-										<img src={notification.from.profileImg || "/avatar-placeholder.png"} />
+										<img src={notification.from.profileImg || imagePlaceholder} />
 									</div>
 								</div>
 								<div className='flex gap-1'>

@@ -7,7 +7,7 @@ import { useEffect } from "react";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-const Posts = ({feedType}) => {
+const Posts = ({feedType,username,userId}) => {
 
 	const getPostEndpoint = ()=>{
 		switch(feedType){
@@ -15,6 +15,10 @@ const Posts = ({feedType}) => {
 			return `${API_BASE_URL}/api/v2/post`;
 		case "following":
 			return `${API_BASE_URL}/api/v2/post/getFollowingPost`;
+		case "posts":
+			return `${API_BASE_URL}/api/v2/post/getUserPost/${username}`
+		case "likes":
+			return `${API_BASE_URL}/api/v2/post/getLikedPost/${userId}`
 		default:
 			return `${API_BASE_URL}/api/v2/post`
 		}

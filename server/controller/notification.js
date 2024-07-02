@@ -7,7 +7,7 @@ export const GetNotificationHandler = async (req,res,next)=>{
 
      const notification = await Notification.find({to:userId}).populate({
         path:"from",
-        select:"username,profileImg"
+        select:"username profileImg"
      })
      await Notification.updateMany({to:userId},{read:true});
      res.status(200).json(notification);
